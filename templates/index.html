@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Merger & Splitter</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1><i class="fas fa-file-pdf"></i> PDF Tools</h1>
+            <p>Merge multiple PDFs or split a single PDF into pages</p>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+            <button class="tab-button active" data-tab="merge">
+                <i class="fas fa-compress-arrows-alt"></i> Merge PDFs
+            </button>
+            <button class="tab-button" data-tab="split">
+                <i class="fas fa-expand-arrows-alt"></i> Split PDF
+            </button>
+        </div>
+
+        <!-- Merge Tab Content -->
+        <div id="merge" class="tab-content active">
+            <div class="section">
+                <h2>Merge Multiple PDFs</h2>
+                <p>Select multiple PDF files to combine them into one document. Files will be merged in the order selected.</p>
+                
+                <div class="upload-area" id="merge-upload-area">
+                    <input type="file" id="merge-files" multiple accept=".pdf" style="display: none;">
+                    <div class="upload-placeholder">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Click to select PDF files or drag them here</p>
+                        <span class="upload-hint">You can select multiple files at once</span>
+                    </div>
+                </div>
+
+                <div id="merge-file-list" class="file-list"></div>
+
+                <button id="merge-btn" class="btn btn-primary" disabled>
+                    <i class="fas fa-compress-arrows-alt"></i> Merge PDFs
+                </button>
+            </div>
+        </div>
+
+        <!-- Split Tab Content -->
+        <div id="split" class="tab-content">
+            <div class="section">
+                <h2>Split PDF into Pages</h2>
+                <p>Upload a PDF and select specific pages to extract into a new document.</p>
+                
+                <div class="upload-area" id="split-upload-area">
+                    <input type="file" id="split-file" accept=".pdf" style="display: none;">
+                    <div class="upload-placeholder">
+                        <i class="fas fa-file-upload"></i>
+                        <p>Click to select a PDF file or drag it here</p>
+                        <span class="upload-hint">Single PDF file only</span>
+                    </div>
+                </div>
+
+                <div id="split-file-info" class="file-info" style="display: none;">
+                    <h3>PDF Information</h3>
+                    <p id="split-filename"></p>
+                    <p id="split-pages"></p>
+                </div>
+
+                <div id="page-selector" class="page-selector" style="display: none;">
+                    <h3>Select Pages to Extract</h3>
+                    <div class="selection-methods">
+                        <div class="method">
+                            <label>
+                                <input type="radio" name="selection-method" value="individual" checked>
+                                Select individual pages
+                            </label>
+                            <div id="page-checkboxes" class="page-checkboxes"></div>
+                        </div>
+                        <div class="method">
+                            <label>
+                                <input type="radio" name="selection-method" value="range">
+                                Select page range
+                            </label>
+                            <div class="range-inputs">
+                                <input type="number" id="range-start" placeholder="From page" min="1">
+                                <span>to</span>
+                                <input type="number" id="range-end" placeholder="To page" min="1">
+                                <button type="button" id="apply-range" class="btn btn-small">Apply Range</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="selected-pages">
+                        <strong>Selected pages: </strong>
+                        <span id="selected-pages-display">None</span>
+                        <button type="button" id="clear-selection" class="btn btn-small btn-secondary">Clear All</button>
+                    </div>
+                </div>
+
+                <button id="split-btn" class="btn btn-primary" disabled>
+                    <i class="fas fa-expand-arrows-alt"></i> Split PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div id="progress-overlay" class="progress-overlay" style="display: none;">
+            <div class="progress-content">
+                <div class="spinner"></div>
+                <p id="progress-message">Processing your request...</p>
+            </div>
+        </div>
+
+        <!-- Error/Success Messages -->
+        <div id="message-container" class="message-container"></div>
+    </div>
+
+    <footer class="footer">
+        <p>Built with ❤️ using Node.js, Express, and PDF-lib</p>
+        <p>
+            <a href="https://github.com" target="_blank">
+                <i class="fab fa-github"></i> View Source
+            </a>
+        </p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
