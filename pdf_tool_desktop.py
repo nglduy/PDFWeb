@@ -1,395 +1,512 @@
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
-import threading
-import os
-import sys
-from pathlib import Path
-import PyPDF2
-from PyPDF2 import PdfReader, PdfWriter
-from datetime import datetime
-import io
+"""
+🔄 PDF Tools Desktop - Purple Theme (Matching the UI Image)
+Beautiful desktop application for merging and splitting PDFs with a modern purple interface
+"""
 
-class PDFToolApp:
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
+import PyPDF2
+import os
+import threading
+
+
+class ModernPDFToolApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("PDF Tools - Merge & Split PDFs")
-        self.root.geometry("800x600")
-        self.root.configure(bg='#f8f9fa')
+        self.root.title("🔄 PDF Tools - Desktop")
+        self.root.geometry("900x700")
+        self.root.configure(bg='#8B5CF6')  # Purple gradient background like in image
         
-        # Configure style
-        self.style = ttk.Style()
-        self.style.theme_use('clam')
-        
-        # Configure colors
-        self.style.configure('Title.TLabel', font=('Arial', 24, 'bold'), foreground='#2c3e50', background='#f8f9fa')
-        self.style.configure('Heading.TLabel', font=('Arial', 14, 'bold'), foreground='#495057', background='#f8f9fa')
-        self.style.configure('Custom.TButton', font=('Arial', 12, 'bold'), padding=10)
-        self.style.configure('Success.TLabel', font=('Arial', 10), foreground='#155724', background='#d4edda')
-        self.style.configure('Error.TLabel', font=('Arial', 10), foreground='#721c24', background='#f8d7da')
-        
-        self.create_widgets()
-        
-        # Variables
+        # Initialize variables
         self.selected_files = []
         self.current_pdf_path = None
         self.current_pdf_pages = 0
         
-    def create_widgets(self):
-        # Main container
-        main_frame = ttk.Frame(self.root, style='Card.TFrame')
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        self.setup_styles()
+        self.create_interface()
+    
+    def setup_styles(self):
+        """🎨 Setup beautiful purple theme styles matching the image"""
+        self.style = ttk.Style()
+        self.style.theme_use('clam')
         
-        # Title
-        title_label = ttk.Label(main_frame, text="🔄 PDF Tools", style='Title.TLabel')
-        title_label.pack(pady=(0, 10))
+        # 💜 PURPLE THEME COLOR PALETTE (matching the image)
+        bg_primary = '#8B5CF6'        # Purple gradient background
+        bg_secondary = '#7C3AED'      # Darker purple
+        card_bg = '#FFFFFF'           # White cards
+        text_primary = '#1F2937'      # Dark gray text
+        text_secondary = '#6B7280'    # Light gray text
+        text_purple = '#8B5CF6'       # Purple text for headers
+        button_primary = '#8B5CF6'    # Purple buttons
+        button_secondary = '#E5E7EB'  # Light gray buttons
         
-        subtitle_label = ttk.Label(main_frame, text="Free offline tool to merge multiple PDFs or split a PDF into individual pages", 
-                                 font=('Arial', 11), foreground='#6c757d', background='#f8f9fa')
-        subtitle_label.pack(pady=(0, 30))
+        # Configure notebook (tabs) style
+        self.style.configure('Custom.TNotebook', 
+                           background=bg_primary,
+                           borderwidth=0)
         
-        # Create notebook for tabs
-        self.notebook = ttk.Notebook(main_frame)
-        self.notebook.pack(fill=tk.BOTH, expand=True, pady=10)
+        self.style.configure('Custom.TNotebook.Tab',
+                           background='rgba(255,255,255,0.2)',
+                           foreground='white',
+                           font=('Segoe UI', 14, 'bold'),
+                           padding=[20, 12],
+                           borderwidth=0)
         
-        # Merge tab
-        self.create_merge_tab()
+        self.style.map('Custom.TNotebook.Tab',
+                     background=[('selected', 'white'),
+                               ('active', 'rgba(255,255,255,0.3)')],
+                     foreground=[('selected', text_purple),
+                               ('active', 'white')])
         
-        # Split tab
-        self.create_split_tab()
+        # Card frame style - White like in image
+        self.style.configure('Card.TFrame',
+                           background=card_bg,
+                           relief='flat',
+                           borderwidth=0)
         
+        # Main title style - White on purple
+        self.style.configure('Title.TLabel', 
+                           font=('Segoe UI', 24, 'normal'), 
+                           foreground='white', 
+                           background=bg_primary)
+        
+        # Section heading style - Purple on white cards
+        self.style.configure('SectionTitle.TLabel', 
+                           font=('Segoe UI', 24, 'bold'), 
+                           foreground=text_primary, 
+                           background=card_bg)
+        
+        # Subtitle style - Gray on white
+        self.style.configure('Subtitle.TLabel', 
+                           font=('Segoe UI', 14, 'normal'), 
+                           foreground=text_secondary, 
+                           background=card_bg)
+        
+        # Primary button style - Purple like in image
+        self.style.configure('Primary.TButton',
+                           font=('Segoe UI', 13, 'bold'),
+                           foreground='white',
+                           background=button_primary,
+                           borderwidth=0,
+                           focuscolor='none',
+                           padding=[20, 12])
+        
+        self.style.map('Primary.TButton',
+                     background=[('active', '#7C3AED'),
+                               ('pressed', '#6D28D9')])
+        
+        # Secondary button style - Light like in image
+        self.style.configure('Secondary.TButton',
+                           font=('Segoe UI', 12),
+                           foreground=text_secondary,
+                           background=button_secondary,
+                           borderwidth=1,
+                           padding=[15, 8])
+        
+        self.style.map('Secondary.TButton',
+                     background=[('active', '#F3F4F6'),
+                               ('pressed', '#E5E7EB')])
+        
+        # Status styles - Clean and minimal
+        self.style.configure('Success.TLabel',
+                           font=('Segoe UI', 12, 'bold'),
+                           foreground='#059669',
+                           background=card_bg,
+                           padding=10)
+        
+        self.style.configure('Error.TLabel',
+                           font=('Segoe UI', 12, 'bold'),
+                           foreground='#DC2626',
+                           background=card_bg,
+                           padding=10)
+        
+        self.style.configure('Loading.TLabel',
+                           font=('Segoe UI', 12, 'bold'),
+                           foreground=text_purple,
+                           background=card_bg,
+                           padding=10)
+
+    def create_interface(self):
+        """🎨 Create beautiful purple interface matching the design"""
+        
+        # Main title at top - white on purple
+        title_label = ttk.Label(self.root, 
+                               text="Merge multiple PDFs or split a single PDF into pages", 
+                               style='Title.TLabel')
+        title_label.pack(pady=(30, 40), padx=20)
+        
+        # Create main container with proper spacing
+        main_container = tk.Frame(self.root, bg='#8B5CF6')
+        main_container.pack(fill='both', expand=True, padx=40, pady=(0, 40))
+        
+        # Create notebook for tabs (like in the image)
+        self.notebook = ttk.Notebook(main_container, style='Custom.TNotebook')
+        self.notebook.pack(fill='both', expand=True)
+        
+        # Create merge tab
+        self.merge_frame = self.create_merge_tab()
+        self.notebook.add(self.merge_frame, text='🔀 Merge PDFs')
+        
+        # Create split tab
+        self.split_frame = self.create_split_tab()
+        self.notebook.add(self.split_frame, text='📄 Split PDF')
+    
     def create_merge_tab(self):
-        # Merge frame
-        merge_frame = ttk.Frame(self.notebook, padding="20")
-        self.notebook.add(merge_frame, text="📄 Merge PDFs")
+        """🔀 Create merge PDFs tab with white card design"""
+        # Main frame with white card background
+        frame = ttk.Frame(style='Card.TFrame')
         
-        # Heading
-        merge_heading = ttk.Label(merge_frame, text="Merge Multiple PDFs", style='Heading.TLabel')
-        merge_heading.pack(anchor='w', pady=(0, 15))
+        # Card container with padding
+        card_container = tk.Frame(frame, bg='white')
+        card_container.pack(fill='both', expand=True, padx=30, pady=30)
         
-        # File selection section
-        file_section = ttk.LabelFrame(merge_frame, text="Select PDF Files", padding="15")
-        file_section.pack(fill='x', pady=(0, 15))
+        # Section title
+        title = ttk.Label(card_container, 
+                         text="Merge Multiple PDFs", 
+                         style='SectionTitle.TLabel')
+        title.pack(pady=(20, 10))
         
-        # Select files button
-        select_btn = ttk.Button(file_section, text="📁 Select PDF Files", 
-                               command=self.select_files, style='Custom.TButton')
-        select_btn.pack(pady=(0, 10))
+        # Subtitle description
+        subtitle = ttk.Label(card_container, 
+                           text="Select multiple PDF files to combine them into one document. Files will be merged in the order selected.", 
+                           style='Subtitle.TLabel')
+        subtitle.pack(pady=(0, 30))
         
-        # Selected files list
-        self.files_listbox = tk.Listbox(file_section, height=8, font=('Arial', 10))
-        self.files_listbox.pack(fill='x', pady=(0, 10))
+        # Create drag and drop area (like in the image)
+        self.create_drop_area(card_container, 'merge')
         
-        # Buttons frame
-        buttons_frame = ttk.Frame(file_section)
-        buttons_frame.pack(fill='x')
+        # Files list area
+        self.files_frame = tk.Frame(card_container, bg='white')
+        self.files_frame.pack(fill='x', pady=20)
         
-        remove_btn = ttk.Button(buttons_frame, text="❌ Remove Selected", command=self.remove_selected_file)
-        remove_btn.pack(side='left', padx=(0, 5))
+        # Show "No files selected" initially
+        self.files_status = tk.Label(self.files_frame, text="No files selected", 
+                                    font=('Segoe UI', 12), 
+                                    fg='#6B7280', bg='white')
+        self.files_status.pack()
         
-        clear_btn = ttk.Button(buttons_frame, text="🗑️ Clear All", command=self.clear_files)
+        # Action buttons container
+        buttons_frame = tk.Frame(card_container, bg='white')
+        buttons_frame.pack(pady=(20, 30))
+        
+        # Merge button (purple like in image)
+        self.merge_btn = ttk.Button(buttons_frame, 
+                                   text="🔀 Merge PDFs", 
+                                   style='Primary.TButton',
+                                   command=self.merge_pdfs,
+                                   state='disabled')
+        self.merge_btn.pack(side='left', padx=(0, 15))
+        
+        # Clear button (light gray like in image)
+        clear_btn = ttk.Button(buttons_frame,
+                              text="Clear Files",
+                              style='Secondary.TButton', 
+                              command=self.clear_files)
         clear_btn.pack(side='left')
         
-        # Merge section
-        merge_section = ttk.LabelFrame(merge_frame, text="Merge Options", padding="15")
-        merge_section.pack(fill='x', pady=(0, 15))
+        # Status area
+        self.merge_status = ttk.Label(card_container, text="")
+        self.merge_status.pack(pady=10)
         
-        self.merge_btn = ttk.Button(merge_section, text="🔄 Merge PDFs", 
-                                   command=self.merge_pdfs, style='Custom.TButton', state='disabled')
-        self.merge_btn.pack(pady=(0, 10))
-        
-        # Status label for merge
-        self.merge_status = ttk.Label(merge_section, text="", background='#f8f9fa')
-        self.merge_status.pack()
-        
+        return frame
+    
     def create_split_tab(self):
-        # Split frame
-        split_frame = ttk.Frame(self.notebook, padding="20")
-        self.notebook.add(split_frame, text="✂️ Split PDF")
+        """📄 Create split PDF tab with white card design"""
+        # Main frame with white card background
+        frame = ttk.Frame(style='Card.TFrame')
         
-        # Heading
-        split_heading = ttk.Label(split_frame, text="Split PDF into Pages", style='Heading.TLabel')
-        split_heading.pack(anchor='w', pady=(0, 15))
+        # Card container with padding
+        card_container = tk.Frame(frame, bg='white')
+        card_container.pack(fill='both', expand=True, padx=30, pady=30)
         
-        # File selection section
-        pdf_section = ttk.LabelFrame(split_frame, text="Select PDF to Split", padding="15")
-        pdf_section.pack(fill='x', pady=(0, 15))
+        # Section title
+        title = ttk.Label(card_container, 
+                         text="Split PDF into Pages", 
+                         style='SectionTitle.TLabel')
+        title.pack(pady=(20, 10))
         
-        select_pdf_btn = ttk.Button(pdf_section, text="📁 Select PDF File", 
-                                   command=self.select_pdf_to_split, style='Custom.TButton')
-        select_pdf_btn.pack(pady=(0, 10))
+        # Subtitle description
+        subtitle = ttk.Label(card_container, 
+                           text="Select a PDF file to split it into individual pages.", 
+                           style='Subtitle.TLabel')
+        subtitle.pack(pady=(0, 30))
         
-        # PDF info
-        self.pdf_info_label = ttk.Label(pdf_section, text="No PDF selected", 
-                                       font=('Arial', 10), foreground='#6c757d', background='#f8f9fa')
-        self.pdf_info_label.pack()
+        # Create drag and drop area for single file
+        self.create_drop_area(card_container, 'split')
         
-        # Split options section
-        self.split_section = ttk.LabelFrame(split_frame, text="Split Options", padding="15")
-        self.split_section.pack(fill='x', pady=(0, 15))
+        # PDF info display
+        self.pdf_info_frame = tk.Frame(card_container, bg='white')
+        self.pdf_info_frame.pack(fill='x', pady=20)
         
-        # Page range input
-        ttk.Label(self.split_section, text="Pages to extract:", font=('Arial', 11, 'bold'), background='#f8f9fa').pack(anchor='w', pady=(0, 5))
+        # Action buttons container
+        buttons_frame = tk.Frame(card_container, bg='white')
+        buttons_frame.pack(pady=(20, 30))
         
-        self.pages_entry = ttk.Entry(self.split_section, font=('Arial', 11), width=50)
-        self.pages_entry.pack(fill='x', pady=(0, 5))
+        # Select PDF button
+        select_btn = ttk.Button(buttons_frame,
+                               text="📂 Select PDF File",
+                               style='Secondary.TButton',
+                               command=self.select_pdf_to_split)
+        select_btn.pack(side='left', padx=(0, 15))
         
-        help_label = ttk.Label(self.split_section, 
-                              text="💡 Examples: '1,3,5' for pages 1,3,5 | '1-5' for pages 1 through 5 | '1-3,7,10-12' for mixed ranges",
-                              font=('Arial', 9), foreground='#6c757d', background='#f8f9fa', wraplength=600)
-        help_label.pack(anchor='w', pady=(0, 15))
+        # Split button (purple like in image)
+        self.split_btn = ttk.Button(buttons_frame,
+                                   text="📄 Split PDF", 
+                                   style='Primary.TButton',
+                                   command=self.split_pdf,
+                                   state='disabled')
+        self.split_btn.pack(side='left')
         
-        # Split button
-        self.split_btn = ttk.Button(self.split_section, text="✂️ Split PDF", 
-                                   command=self.split_pdf, style='Custom.TButton', state='disabled')
-        self.split_btn.pack(pady=(0, 10))
+        # Status area
+        self.split_status = ttk.Label(card_container, text="")
+        self.split_status.pack(pady=10)
         
-        # Status label for split
-        self.split_status = ttk.Label(self.split_section, text="", background='#f8f9fa')
-        self.split_status.pack()
+        return frame
+    
+    def create_drop_area(self, parent, mode):
+        """☁️ Create drag and drop area like in the image"""
+        # Dashed border container (like in the image)
+        drop_frame = tk.Frame(parent, bg='white', highlightthickness=2, 
+                             highlightcolor='#E5E7EB', highlightbackground='#E5E7EB',
+                             relief='solid', bd=1)
+        drop_frame.pack(fill='x', pady=20, ipady=40)
         
-        # Initially hide split options
-        self.split_section.pack_forget()
+        # Cloud icon and text (like in the image)
+        icon_label = tk.Label(drop_frame, text="☁️", font=('Segoe UI', 48), 
+                             fg='#9CA3AF', bg='white')
+        icon_label.pack(pady=(20, 10))
         
+        if mode == 'merge':
+            main_text = "Click to select PDF files or drag them here"
+            sub_text = "You can select multiple files at once"
+        else:
+            main_text = "Click to select a PDF file or drag it here"
+            sub_text = "Select a single PDF file to split"
+        
+        # Main drop text (like in the image)
+        main_label = tk.Label(drop_frame, text=main_text, 
+                             font=('Segoe UI', 14, 'bold'),
+                             fg='#374151', bg='white')
+        main_label.pack(pady=(0, 5))
+        
+        # Sub text (like in the image)
+        sub_label = tk.Label(drop_frame, text=sub_text, 
+                            font=('Segoe UI', 12),
+                            fg='#6B7280', bg='white')
+        sub_label.pack(pady=(0, 20))
+        
+        # Make the entire drop area clickable
+        if mode == 'merge':
+            drop_frame.bind("<Button-1>", lambda e: self.select_files())
+            icon_label.bind("<Button-1>", lambda e: self.select_files())
+            main_label.bind("<Button-1>", lambda e: self.select_files())
+            sub_label.bind("<Button-1>", lambda e: self.select_files())
+        else:
+            drop_frame.bind("<Button-1>", lambda e: self.select_pdf_to_split())
+            icon_label.bind("<Button-1>", lambda e: self.select_pdf_to_split())
+            main_label.bind("<Button-1>", lambda e: self.select_pdf_to_split())
+            sub_label.bind("<Button-1>", lambda e: self.select_pdf_to_split())
+        
+        # Store reference for status updates
+        if mode == 'merge':
+            self.merge_drop_area = drop_frame
+            self.merge_status_text = main_label
+        else:
+            self.split_drop_area = drop_frame
+            self.split_status_text = main_label
+
     def select_files(self):
+        """Select multiple PDF files for merging"""
         files = filedialog.askopenfilenames(
             title="Select PDF files to merge",
             filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
         )
         
         if files:
-            # Add new files to the list
-            for file in files:
-                if file not in self.selected_files:
-                    self.selected_files.append(file)
+            self.selected_files = list(files)
+            self.update_files_display()
+            self.merge_btn.config(state='normal' if len(self.selected_files) > 1 else 'disabled')
+
+    def update_files_display(self):
+        """Update the display of selected files"""
+        # Clear existing display
+        for widget in self.files_frame.winfo_children():
+            widget.destroy()
+        
+        if self.selected_files:
+            # Show file count
+            count_text = f"{len(self.selected_files)} files selected:"
+            count_label = tk.Label(self.files_frame, text=count_text, 
+                                  font=('Segoe UI', 12, 'bold'), 
+                                  fg='#374151', bg='white')
+            count_label.pack(anchor='w', pady=(0, 10))
             
-            self.update_files_listbox()
-            self.update_merge_button_state()
-    
-    def update_files_listbox(self):
-        self.files_listbox.delete(0, tk.END)
-        for i, file_path in enumerate(self.selected_files):
-            filename = os.path.basename(file_path)
-            self.files_listbox.insert(tk.END, f"{i+1}. {filename}")
-    
-    def remove_selected_file(self):
-        selection = self.files_listbox.curselection()
-        if selection:
-            index = selection[0]
-            self.selected_files.pop(index)
-            self.update_files_listbox()
-            self.update_merge_button_state()
-    
-    def clear_files(self):
-        self.selected_files.clear()
-        self.update_files_listbox()
-        self.update_merge_button_state()
-    
-    def update_merge_button_state(self):
-        if len(self.selected_files) >= 2:
-            self.merge_btn.config(state='normal')
-            self.merge_status.config(text=f"Ready to merge {len(self.selected_files)} files", foreground='#155724')
+            # Show files in a scrollable list
+            files_container = tk.Frame(self.files_frame, bg='white')
+            files_container.pack(fill='both', expand=True)
+            
+            for i, file_path in enumerate(self.selected_files, 1):
+                file_name = os.path.basename(file_path)
+                file_label = tk.Label(files_container, 
+                                     text=f"{i}. {file_name}", 
+                                     font=('Segoe UI', 10),
+                                     fg='#6B7280', bg='white',
+                                     anchor='w')
+                file_label.pack(fill='x', pady=2, padx=20)
         else:
-            self.merge_btn.config(state='disabled')
-            if len(self.selected_files) == 0:
-                self.merge_status.config(text="Please select PDF files to merge", foreground='#6c757d')
-            else:
-                self.merge_status.config(text="Please select at least 2 PDF files", foreground='#856404')
-    
-    def merge_pdfs(self):
-        if len(self.selected_files) < 2:
-            messagebox.showerror("Error", "Please select at least 2 PDF files to merge")
-            return
-        
-        # Ask where to save
-        output_file = filedialog.asksaveasfilename(
-            title="Save merged PDF as",
-            defaultextension=".pdf",
-            filetypes=[("PDF files", "*.pdf")],
-            initialname=f"merged_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-        )
-        
-        if not output_file:
-            return
-        
-        # Start merge in thread to prevent UI freezing
+            # Show "No files selected"
+            self.files_status = tk.Label(self.files_frame, text="No files selected", 
+                                        font=('Segoe UI', 12), 
+                                        fg='#6B7280', bg='white')
+            self.files_status.pack()
+
+    def clear_files(self):
+        """Clear all selected files"""
+        self.selected_files = []
         self.merge_btn.config(state='disabled')
-        self.merge_status.config(text="🔄 Merging PDFs...", foreground='#0c5460')
-        self.root.update()
-        
-        thread = threading.Thread(target=self.perform_merge, args=(output_file,))
-        thread.daemon = True
-        thread.start()
-    
-    def perform_merge(self, output_file):
-        try:
-            pdf_writer = PdfWriter()
-            
-            for file_path in self.selected_files:
-                with open(file_path, 'rb') as pdf_file:
-                    pdf_reader = PdfReader(pdf_file)
-                    
-                    for page in pdf_reader.pages:
-                        pdf_writer.add_page(page)
-            
-            # Write merged PDF
-            with open(output_file, 'wb') as output:
-                pdf_writer.write(output)
-            
-            # Update UI in main thread
-            self.root.after(0, self.merge_completed, output_file)
-            
-        except Exception as e:
-            self.root.after(0, self.merge_failed, str(e))
-    
-    def merge_completed(self, output_file):
-        self.merge_btn.config(state='normal')
-        self.merge_status.config(text=f"✅ Successfully merged! Saved as: {os.path.basename(output_file)}", foreground='#155724')
-        messagebox.showinfo("Success", f"PDFs merged successfully!\n\nSaved as: {output_file}")
-    
-    def merge_failed(self, error_msg):
-        self.merge_btn.config(state='normal')
-        self.merge_status.config(text=f"❌ Merge failed: {error_msg}", foreground='#721c24')
-        messagebox.showerror("Error", f"Failed to merge PDFs:\n{error_msg}")
-    
+        self.update_files_display()
+        self.show_status(self.merge_status, "Files cleared", "success")
+
     def select_pdf_to_split(self):
+        """Select a single PDF file for splitting"""
         file_path = filedialog.askopenfilename(
-            title="Select PDF to split",
+            title="Select PDF file to split",
             filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
         )
         
         if file_path:
-            self.current_pdf_path = file_path
-            self.analyze_pdf(file_path)
-    
-    def analyze_pdf(self, file_path):
-        try:
-            with open(file_path, 'rb') as pdf_file:
-                pdf_reader = PdfReader(pdf_file)
-                self.current_pdf_pages = len(pdf_reader.pages)
+            try:
+                with open(file_path, 'rb') as file:
+                    pdf_reader = PyPDF2.PdfReader(file)
+                    self.current_pdf_pages = len(pdf_reader.pages)
+                    self.current_pdf_path = file_path
+                
+                # Update display
+                self.update_pdf_info_display()
+                self.split_btn.config(state='normal')
+                
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to read PDF: {str(e)}")
+
+    def update_pdf_info_display(self):
+        """Update the PDF info display"""
+        # Clear existing display
+        for widget in self.pdf_info_frame.winfo_children():
+            widget.destroy()
+        
+        if self.current_pdf_path:
+            file_name = os.path.basename(self.current_pdf_path)
             
-            filename = os.path.basename(file_path)
-            self.pdf_info_label.config(
-                text=f"📄 {filename}\n📊 Total pages: {self.current_pdf_pages}",
-                foreground='#155724'
-            )
+            # File info
+            info_text = f"📄 {file_name}"
+            info_label = tk.Label(self.pdf_info_frame, text=info_text, 
+                                 font=('Segoe UI', 12, 'bold'), 
+                                 fg='#374151', bg='white')
+            info_label.pack(anchor='w', pady=(0, 5))
             
-            # Show split options
-            self.split_section.pack(fill='x', pady=(0, 15))
-            self.split_btn.config(state='normal')
-            self.split_status.config(text="Enter page numbers to extract", foreground='#6c757d')
-            
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to analyze PDF:\n{str(e)}")
-            self.pdf_info_label.config(text="❌ Failed to analyze PDF", foreground='#721c24')
-    
+            # Pages info
+            pages_text = f"📋 {self.current_pdf_pages} pages • Will be split into {self.current_pdf_pages} separate files"
+            pages_label = tk.Label(self.pdf_info_frame, text=pages_text, 
+                                  font=('Segoe UI', 10),
+                                  fg='#6B7280', bg='white')
+            pages_label.pack(anchor='w')
+
+    def merge_pdfs(self):
+        """Merge selected PDF files"""
+        if len(self.selected_files) < 2:
+            messagebox.showerror("Error", "Please select at least 2 PDF files to merge.")
+            return
+        
+        output_path = filedialog.asksaveasfilename(
+            title="Save merged PDF as",
+            defaultextension=".pdf",
+            filetypes=[("PDF files", "*.pdf")]
+        )
+        
+        if not output_path:
+            return
+        
+        def merge_thread():
+            try:
+                self.show_status(self.merge_status, "Merging PDFs...", "loading")
+                
+                pdf_merger = PyPDF2.PdfMerger()
+                
+                for file_path in self.selected_files:
+                    pdf_merger.append(file_path)
+                
+                with open(output_path, 'wb') as output_file:
+                    pdf_merger.write(output_file)
+                
+                pdf_merger.close()
+                
+                self.show_status(self.merge_status, 
+                               f"✅ Successfully merged {len(self.selected_files)} PDFs into {os.path.basename(output_path)}", 
+                               "success")
+                
+            except Exception as e:
+                self.show_status(self.merge_status, f"❌ Error merging PDFs: {str(e)}", "error")
+        
+        threading.Thread(target=merge_thread, daemon=True).start()
+
     def split_pdf(self):
+        """Split the selected PDF into individual pages"""
         if not self.current_pdf_path:
-            messagebox.showerror("Error", "Please select a PDF file first")
+            messagebox.showerror("Error", "Please select a PDF file to split.")
             return
         
-        page_input = self.pages_entry.get().strip()
-        if not page_input:
-            messagebox.showerror("Error", "Please enter page numbers to extract")
+        output_dir = filedialog.askdirectory(title="Choose directory to save split pages")
+        
+        if not output_dir:
             return
         
-        try:
-            pages = self.parse_pages(page_input)
-            if not pages:
-                messagebox.showerror("Error", "Invalid page numbers")
-                return
-            
-            # Validate pages
-            invalid_pages = [p for p in pages if p < 1 or p > self.current_pdf_pages]
-            if invalid_pages:
-                messagebox.showerror("Error", f"Invalid page numbers: {invalid_pages}\nPDF has {self.current_pdf_pages} pages")
-                return
-            
-            # Ask where to save
-            output_file = filedialog.asksaveasfilename(
-                title="Save split PDF as",
-                defaultextension=".pdf",
-                filetypes=[("PDF files", "*.pdf")],
-                initialname=f"split_pages_{'_'.join(map(str, sorted(pages)))}.pdf"
-            )
-            
-            if not output_file:
-                return
-            
-            # Start split in thread
-            self.split_btn.config(state='disabled')
-            self.split_status.config(text="✂️ Splitting PDF...", foreground='#0c5460')
-            self.root.update()
-            
-            thread = threading.Thread(target=self.perform_split, args=(output_file, pages))
-            thread.daemon = True
-            thread.start()
-            
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to parse page numbers:\n{str(e)}")
-    
-    def parse_pages(self, input_str):
-        pages = []
-        parts = input_str.split(',')
-        
-        for part in parts:
-            part = part.strip()
-            if '-' in part:
-                try:
-                    start, end = part.split('-')
-                    start, end = int(start.strip()), int(end.strip())
-                    for i in range(start, end + 1):
-                        pages.append(i)
-                except ValueError:
-                    continue
-            else:
-                try:
-                    pages.append(int(part))
-                except ValueError:
-                    continue
-        
-        return sorted(list(set(pages)))  # Remove duplicates and sort
-    
-    def perform_split(self, output_file, pages):
-        try:
-            with open(self.current_pdf_path, 'rb') as pdf_file:
-                pdf_reader = PdfReader(pdf_file)
-                pdf_writer = PdfWriter()
+        def split_thread():
+            try:
+                self.show_status(self.split_status, "Splitting PDF...", "loading")
                 
-                for page_num in pages:
-                    page_index = page_num - 1  # Convert to 0-based index
-                    pdf_writer.add_page(pdf_reader.pages[page_index])
+                with open(self.current_pdf_path, 'rb') as file:
+                    pdf_reader = PyPDF2.PdfReader(file)
+                    base_name = os.path.splitext(os.path.basename(self.current_pdf_path))[0]
+                    
+                    for page_num, page in enumerate(pdf_reader.pages, 1):
+                        pdf_writer = PyPDF2.PdfWriter()
+                        pdf_writer.add_page(page)
+                        
+                        output_path = os.path.join(output_dir, f"{base_name}_page_{page_num}.pdf")
+                        
+                        with open(output_path, 'wb') as output_file:
+                            pdf_writer.write(output_file)
                 
-                # Write split PDF
-                with open(output_file, 'wb') as output:
-                    pdf_writer.write(output)
-            
-            # Update UI in main thread
-            self.root.after(0, self.split_completed, output_file, pages)
-            
-        except Exception as e:
-            self.root.after(0, self.split_failed, str(e))
-    
-    def split_completed(self, output_file, pages):
-        self.split_btn.config(state='normal')
-        self.split_status.config(text=f"✅ Successfully extracted pages {', '.join(map(str, pages))}!", foreground='#155724')
-        messagebox.showinfo("Success", f"PDF split successfully!\n\nExtracted pages: {', '.join(map(str, pages))}\nSaved as: {output_file}")
-    
-    def split_failed(self, error_msg):
-        self.split_btn.config(state='normal')
-        self.split_status.config(text=f"❌ Split failed: {error_msg}", foreground='#721c24')
-        messagebox.showerror("Error", f"Failed to split PDF:\n{error_msg}")
+                self.show_status(self.split_status, 
+                               f"✅ Successfully split PDF into {self.current_pdf_pages} files in {os.path.basename(output_dir)}", 
+                               "success")
+                
+            except Exception as e:
+                self.show_status(self.split_status, f"❌ Error splitting PDF: {str(e)}", "error")
+        
+        threading.Thread(target=split_thread, daemon=True).start()
+
+    def show_status(self, label, message, status_type):
+        """Show status message with appropriate styling"""
+        if status_type == "success":
+            label.config(text=message, style='Success.TLabel')
+        elif status_type == "error":
+            label.config(text=message, style='Error.TLabel')
+        elif status_type == "loading":
+            label.config(text=message, style='Loading.TLabel')
 
 
 def main():
+    """🚀 Launch the PDF Tools application"""
     root = tk.Tk()
+    app = ModernPDFToolApp(root)
     
-    # Set window icon (if you have an icon file)
-    try:
-        root.iconbitmap('icon.ico')  # Add an icon file if you have one
-    except:
-        pass
+    # Center the window
+    root.update_idletasks()
+    x = (root.winfo_screenwidth() // 2) - (root.winfo_width() // 2)
+    y = (root.winfo_screenheight() // 2) - (root.winfo_height() // 2)
+    root.geometry(f"+{x}+{y}")
     
-    app = PDFToolApp(root)
     root.mainloop()
 
 

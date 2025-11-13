@@ -4,9 +4,7 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -23,23 +21,11 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# PyInstaller
+# PyInstaller - Desktop App Build Files
+build/
+dist/
 *.manifest
 *.spec
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
 
 # Virtual environments
 .env
@@ -49,10 +35,6 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
-# Flask
-instance/
-.webassets-cache
 
 # Logs
 logs
@@ -74,14 +56,6 @@ logs
 ehthumbs.db
 Thumbs.db
 
-# Temporary files and uploads
-uploads/*
-!uploads/.gitkeep
+# Temporary files
 temp/
 tmp/
-
-# Heroku
-.heroku/
-
-# Deployment
-.vercel
