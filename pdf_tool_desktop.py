@@ -14,8 +14,8 @@ class ModernPDFToolApp:
     def __init__(self, root):
         self.root = root
         self.root.title("🔄 PDF Tools - Desktop")
-        self.root.geometry("900x700")
-        self.root.configure(bg='#8B5CF6')  # Purple gradient background like in image
+        self.root.geometry(f"{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}")
+        self.root.configure(bg='#2E2446')  
         
         # Initialize variables
         self.selected_files = []
@@ -31,14 +31,14 @@ class ModernPDFToolApp:
         self.style.theme_use('clam')
         
         # 💜 PURPLE THEME COLOR PALETTE (matching the image)
-        bg_primary = '#8B5CF6'        # Purple gradient background
-        bg_secondary = '#7C3AED'      # Darker purple
-        card_bg = '#FFFFFF'           # White cards
-        text_primary = '#1F2937'      # Dark gray text
-        text_secondary = '#6B7280'    # Light gray text
-        text_purple = '#8B5CF6'       # Purple text for headers
-        button_primary = '#8B5CF6'    # Purple buttons
-        button_secondary = '#E5E7EB'  # Light gray buttons
+        bg_primary = "#2E2446"        
+        bg_secondary = "#DCD7E5"      
+        card_bg = '#FFFFFF'           
+        text_primary = '#1F2937'      
+        text_secondary = '#6B7280'    
+        text_purple = '#1F2937'       
+        button_primary = '#1F2937'    
+        button_secondary = '#E5E7EB'  
         
         # Configure notebook (tabs) style
         self.style.configure('Custom.TNotebook', 
@@ -92,8 +92,10 @@ class ModernPDFToolApp:
                            padding=[20, 12])
         
         self.style.map('Primary.TButton',
-                     background=[('active', '#7C3AED'),
-                               ('pressed', '#6D28D9')])
+                     background=[('active', '#2E2446'),
+                               ('pressed', '#2E2446'),
+                               ('disabled', '#D1D5DB')],  # Light gray for disabled
+                     foreground=[('disabled', '#9CA3AF')])  # Gray text for disabled
         
         # Secondary button style - Light like in image
         self.style.configure('Secondary.TButton',
@@ -105,7 +107,9 @@ class ModernPDFToolApp:
         
         self.style.map('Secondary.TButton',
                      background=[('active', '#F3F4F6'),
-                               ('pressed', '#E5E7EB')])
+                               ('pressed', '#E5E7EB'),
+                               ('disabled', '#F9FAFB')],  # Very light gray for disabled
+                     foreground=[('disabled', '#D1D5DB')])  # Light gray text for disabled
         
         # Status styles - Clean and minimal
         self.style.configure('Success.TLabel',
