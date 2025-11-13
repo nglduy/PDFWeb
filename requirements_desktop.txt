@@ -1,0 +1,6 @@
+# Requirements for PDF Tools Desktop Application
+PyPDF2==3.0.1
+pyinstaller==6.2.0
+
+# Note: tkinter is included with Python by default
+# No additional GUI libraries needed!
