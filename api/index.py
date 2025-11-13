@@ -1,5 +1,4 @@
-from http.server import BaseHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs
+# Simple Vercel Python handler for PDF operations
 import json
 import io
 import PyPDF2
@@ -7,6 +6,7 @@ from PyPDF2 import PdfReader, PdfWriter
 from datetime import datetime
 import base64
 import uuid
+from urllib.parse import parse_qs
 
 # Simple in-memory cache for this serverless function
 pdf_cache = {}
@@ -20,8 +20,7 @@ def generate_filename(original_name):
     return f"{timestamp}_{unique_id}_{original_name}"
 
 def get_html():
-    return '''
-<!DOCTYPE html>
+    return '''<!DOCTYPE html>
 <html>
 <head>
     <title>PDF Tools</title>
@@ -36,20 +35,15 @@ def get_html():
         .btn:disabled { background: #6c757d; cursor: not-allowed; }
         input[type="file"] { margin: 15px 0; padding: 10px; border: 2px dashed #dee2e6; border-radius: 5px; width: 100%; background: white; }
         input[type="text"] { padding: 10px; border: 1px solid #ced4da; border-radius: 5px; width: 100%; margin: 10px 0; }
-        #status, .status { margin: 15px 0; font-weight: bold; padding: 10px; border-radius: 5px; }
+        .status { margin: 15px 0; font-weight: bold; padding: 10px; border-radius: 5px; }
         .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
         .file-info { background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 15px 0; }
         .loading { color: #007bff; }
-        .upload-area { border: 2px dashed #007bff; padding: 20px; text-align: center; border-radius: 10px; background: #f8f9fa; margin: 15px 0; transition: all 0.3s; }
-        .upload-area:hover { background: #e9ecef; }
-        .upload-area.dragover { border-color: #28a745; background: #d4edda; }
+        .upload-area { border: 2px dashed #007bff; padding: 20px; text-align: center; border-radius: 10px; background: #f8f9fa; margin: 15px 0; }
         .features { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0; }
         @media (max-width: 768px) { .features { grid-template-columns: 1fr; } }
         .feature-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; }
-        .feature-box h3 { margin: 0 0 10px 0; }
-        .feature-box p { margin: 0; opacity: 0.9; }
     </style>
 </head>
 <body>
@@ -70,8 +64,7 @@ def get_html():
         
         <div class="section">
             <h2>📄 Merge PDFs</h2>
-            <div class="upload-area" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                <p>📎 Drag & drop PDF files here or click to browse</p>
+            <div class="upload-area">
                 <input type="file" id="mergeFiles" multiple accept=".pdf" onchange="updateFileList()">
             </div>
             <div id="fileList"></div>
@@ -92,9 +85,7 @@ def get_html():
                 </div>
                 <label for="pageNumbers"><strong>Pages to extract:</strong></label>
                 <input type="text" id="pageNumbers" placeholder="Enter pages (e.g., 1,3,5-8 or 1-5,10-15)" />
-                <p style="color: #6c757d; font-size: 14px; margin: 5px 0;">
-                    💡 Examples: "1,3,5" for pages 1,3,5 | "1-5" for pages 1 through 5 | "1-3,7,10-12" for mixed ranges
-                </p>
+                <p style="color: #6c757d; font-size: 14px;">💡 Examples: "1,3,5" for pages 1,3,5 | "1-5" for pages 1 through 5</p>
                 <button class="btn" onclick="splitPDF()">Split PDF</button>
             </div>
             <div id="splitStatus"></div>
@@ -107,23 +98,6 @@ def get_html():
 
     <script>
         let currentPdfData = null;
-
-        function handleDrop(e) {
-            e.preventDefault();
-            e.target.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            document.getElementById('mergeFiles').files = files;
-            updateFileList();
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.target.classList.add('dragover');
-        }
-
-        function handleDragLeave(e) {
-            e.target.classList.remove('dragover');
-        }
 
         function updateFileList() {
             const files = document.getElementById('mergeFiles').files;
@@ -171,7 +145,7 @@ def get_html():
                     });
                 }
 
-                const response = await fetch('/api/index.py', {
+                const response = await fetch('/api/index', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -207,7 +181,7 @@ def get_html():
                 const arrayBuffer = await file.arrayBuffer();
                 const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
-                const response = await fetch('/api/index.py', {
+                const response = await fetch('/api/index', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -258,7 +232,7 @@ def get_html():
             showStatus(statusDiv, '✂️ Splitting PDF...', 'loading');
 
             try {
-                const response = await fetch('/api/index.py', {
+                const response = await fetch('/api/index', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -318,121 +292,169 @@ def get_html():
             element.innerHTML = `<div class="status ${type}">${message}</div>`;
         }
 
-        // Initialize
         document.getElementById('mergeFiles').addEventListener('change', updateFileList);
     </script>
 </body>
-</html>
-'''
+</html>'''
 
-class handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        """Handle GET requests - serve the main page"""
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-        self.wfile.write(get_html().encode())
-
-    def do_POST(self):
-        """Handle POST requests for PDF operations"""
-        try:
-            content_length = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_length)
-            data = json.loads(post_data.decode())
-            
-            action = data.get('action')
-            
-            if action == 'merge':
-                result = self.handle_merge(data.get('files', []))
-            elif action == 'analyze':
-                result = self.handle_analyze(data.get('file'))
-            elif action == 'split':
-                result = self.handle_split(data.get('filename'), data.get('pages'))
-            else:
-                self.send_error(400, "Invalid action")
-                return
-                
-            if isinstance(result, dict):
-                # JSON response
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps(result).encode())
-            else:
-                # PDF file response
-                self.send_response(200)
-                self.send_header('Content-type', 'application/pdf')
-                self.send_header('Content-Disposition', f'attachment; filename="{result[1]}"')
-                self.end_headers()
-                self.wfile.write(result[0])
-                
-        except Exception as e:
-            self.send_error(500, f"Server error: {str(e)}")
-
-    def handle_merge(self, files):
-        """Handle PDF merge operation"""
-        if len(files) < 2:
-            raise ValueError("At least 2 files required")
-        
-        pdf_writer = PdfWriter()
-        
-        for file_data in files:
-            if not allowed_file(file_data['name']):
-                raise ValueError(f"Invalid file: {file_data['name']}")
-                
-            file_bytes = base64.b64decode(file_data['data'])
-            pdf_reader = PdfReader(io.BytesIO(file_bytes))
-            
-            for page in pdf_reader.pages:
-                pdf_writer.add_page(page)
-        
-        output = io.BytesIO()
-        pdf_writer.write(output)
-        
-        return (output.getvalue(), 'merged.pdf')
-
-    def handle_analyze(self, file_data):
-        """Handle PDF analysis operation"""
-        if not file_data or not allowed_file(file_data['name']):
-            raise ValueError("Invalid file")
+def handle_merge(files):
+    """Handle PDF merge operation"""
+    if len(files) < 2:
+        raise ValueError("At least 2 files required")
+    
+    pdf_writer = PdfWriter()
+    
+    for file_data in files:
+        if not allowed_file(file_data['name']):
+            raise ValueError(f"Invalid file: {file_data['name']}")
             
         file_bytes = base64.b64decode(file_data['data'])
         pdf_reader = PdfReader(io.BytesIO(file_bytes))
-        page_count = len(pdf_reader.pages)
         
-        filename = generate_filename(file_data['name'])
-        pdf_cache[filename] = file_bytes
+        for page in pdf_reader.pages:
+            pdf_writer.add_page(page)
+    
+    output = io.BytesIO()
+    pdf_writer.write(output)
+    
+    return output.getvalue()
+
+def handle_analyze(file_data):
+    """Handle PDF analysis operation"""
+    if not file_data or not allowed_file(file_data['name']):
+        raise ValueError("Invalid file")
+        
+    file_bytes = base64.b64decode(file_data['data'])
+    pdf_reader = PdfReader(io.BytesIO(file_bytes))
+    page_count = len(pdf_reader.pages)
+    
+    filename = generate_filename(file_data['name'])
+    pdf_cache[filename] = file_bytes
+    
+    return {
+        'pageCount': page_count,
+        'filename': filename
+    }
+
+def handle_split(filename, pages):
+    """Handle PDF split operation"""
+    if filename not in pdf_cache:
+        raise ValueError("PDF not found")
+        
+    file_bytes = pdf_cache[filename]
+    pdf_reader = PdfReader(io.BytesIO(file_bytes))
+    total_pages = len(pdf_reader.pages)
+    
+    # Validate pages
+    invalid_pages = [p for p in pages if p < 1 or p > total_pages]
+    if invalid_pages:
+        raise ValueError(f"Invalid pages: {invalid_pages}")
+    
+    pdf_writer = PdfWriter()
+    
+    for page_num in sorted(pages):
+        page_index = page_num - 1
+        pdf_writer.add_page(pdf_reader.pages[page_index])
+    
+    output = io.BytesIO()
+    pdf_writer.write(output)
+    
+    # Clean up
+    del pdf_cache[filename]
+    
+    return output.getvalue()
+
+def handler(request):
+    """Vercel serverless function handler"""
+    try:
+        # CORS headers
+        headers = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+        }
+        
+        # Handle OPTIONS (preflight) request
+        if request.method == 'OPTIONS':
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': ''
+            }
+        
+        # Handle GET request - serve HTML
+        if request.method == 'GET':
+            return {
+                'statusCode': 200,
+                'headers': {
+                    **headers,
+                    'Content-Type': 'text/html',
+                },
+                'body': get_html()
+            }
+        
+        # Handle POST request - process PDFs
+        if request.method == 'POST':
+            # Parse request body
+            body = json.loads(request.body)
+            action = body.get('action')
+            
+            if action == 'merge':
+                result = handle_merge(body.get('files', []))
+                return {
+                    'statusCode': 200,
+                    'headers': {
+                        **headers,
+                        'Content-Type': 'application/pdf',
+                        'Content-Disposition': 'attachment; filename="merged.pdf"'
+                    },
+                    'body': base64.b64encode(result).decode(),
+                    'isBase64Encoded': True
+                }
+                
+            elif action == 'analyze':
+                result = handle_analyze(body.get('file'))
+                return {
+                    'statusCode': 200,
+                    'headers': {
+                        **headers,
+                        'Content-Type': 'application/json',
+                    },
+                    'body': json.dumps(result)
+                }
+                
+            elif action == 'split':
+                result = handle_split(body.get('filename'), body.get('pages'))
+                pages_str = '_'.join(map(str, sorted(body.get('pages'))))
+                return {
+                    'statusCode': 200,
+                    'headers': {
+                        **headers,
+                        'Content-Type': 'application/pdf',
+                        'Content-Disposition': f'attachment; filename="split_pages_{pages_str}.pdf"'
+                    },
+                    'body': base64.b64encode(result).decode(),
+                    'isBase64Encoded': True
+                }
+            else:
+                return {
+                    'statusCode': 400,
+                    'headers': headers,
+                    'body': json.dumps({'error': 'Invalid action'})
+                }
         
         return {
-            'pageCount': page_count,
-            'filename': filename
+            'statusCode': 405,
+            'headers': headers,
+            'body': json.dumps({'error': 'Method not allowed'})
         }
-
-    def handle_split(self, filename, pages):
-        """Handle PDF split operation"""
-        if filename not in pdf_cache:
-            raise ValueError("PDF not found")
-            
-        file_bytes = pdf_cache[filename]
-        pdf_reader = PdfReader(io.BytesIO(file_bytes))
-        total_pages = len(pdf_reader.pages)
         
-        # Validate pages
-        invalid_pages = [p for p in pages if p < 1 or p > total_pages]
-        if invalid_pages:
-            raise ValueError(f"Invalid pages: {invalid_pages}")
-        
-        pdf_writer = PdfWriter()
-        
-        for page_num in sorted(pages):
-            page_index = page_num - 1
-            pdf_writer.add_page(pdf_reader.pages[page_index])
-        
-        output = io.BytesIO()
-        pdf_writer.write(output)
-        
-        # Clean up
-        del pdf_cache[filename]
-        
-        download_name = f'split_pages_{"_".join(map(str, sorted(pages)))}.pdf'
-        return (output.getvalue(), download_name)
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Content-Type': 'application/json',
+            },
+            'body': json.dumps({'error': f'Server error: {str(e)}'})
+        }
