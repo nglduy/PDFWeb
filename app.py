@@ -279,20 +279,20 @@ def favicon():
     return '', 204
 
 # Development server configuration
-if __name__ == '__main__':
-    print("🚀 PDF Merger & Splitter server starting...")
-    print(f"📁 Upload directory: {os.path.abspath(UPLOAD_FOLDER)}")
-    print("🌐 Server will be available at: http://localhost:5000")
+# if __name__ == '__main__':
+#     print("🚀 PDF Merger & Splitter server starting...")
+#     print(f"📁 Upload directory: {os.path.abspath(UPLOAD_FOLDER)}")
+#     print("🌐 Server will be available at: http://localhost:5000")
     
-    # Create templates directory if it doesn't exist
-    os.makedirs('templates', exist_ok=True)
+#     # Create templates directory if it doesn't exist
+#     os.makedirs('templates', exist_ok=True)
     
-    # Check if running in production
-    is_production = os.environ.get('RAILWAY_ENVIRONMENT_NAME') or os.environ.get('DYNO') or os.environ.get('RENDER')
+#     # Check if running in production
+#     is_production = os.environ.get('RAILWAY_ENVIRONMENT_NAME') or os.environ.get('DYNO') or os.environ.get('RENDER')
     
-    # Run the Flask development server
-    app.run(
-        debug=not is_production,  # Disable debug in production
-        host='0.0.0.0',  # Accept connections from any IP
-        port=int(os.environ.get('PORT', 5000))  # Use PORT env var or default to 5000
-    )
+#     # Run the Flask development server
+#     app.run(
+#         debug=not is_production,  # Disable debug in production
+#         host='0.0.0.0',  # Accept connections from any IP
+#         port=int(os.environ.get('PORT', 5000))  # Use PORT env var or default to 5000
+#     )
